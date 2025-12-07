@@ -4,135 +4,18 @@ from google.genai import types
 from PIL import Image
 import io
 import time
-import os
-from google_auth_oauthlib.flow import Flow
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
-import base64
-
-# ローカル開発用の設定（HTTPを許可）
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # ページ設定
 st.set_page_config(
     layout="wide",
     page_title="Enjoy Banana Ver 3.0",
     page_icon="🍌",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # セッション状態の初期化
 if 'image_history' not in st.session_state:
     st.session_state.image_history = []
-if 'google_credentials' not in st.session_state:
-    st.session_state.google_credentials = None
-if 'drive_service' not in st.session_state:
-    st.session_state.drive_service = None
-if 'oauth_state' not in st.session_state:
-    st.session_state.oauth_state = None
-
-# Google Drive関連の関数
-def get_google_auth_url():
-    """Google OAuth認証URLを生成"""
-    try:
-        # Secrets設定を確認
-        if "google_auth" not in st.secrets:
-            st.error("⚠️ Streamlit Secretsに `google_auth` が設定されていません")
-            return None
-        
-        client_config = {
-            "web": {
-                "client_id": st.secrets["google_auth"]["client_id"],
-                "client_secret": st.secrets["google_auth"]["client_secret"],
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [st.secrets["google_auth"]["redirect_uri"]]
-            }
-        }
-        
-        flow = Flow.from_client_config(
-            client_config,
-            scopes=['https://www.googleapis.com/auth/drive.file'],
-            redirect_uri=st.secrets["google_auth"]["redirect_uri"]
-        )
-        
-        auth_url, state = flow.authorization_url(
-            access_type='offline',
-            include_granted_scopes='true',
-            prompt='consent'
-        )
-        
-        # stateをセッションに保存
-        st.session_state.oauth_state = state
-        
-        return auth_url
-    except KeyError as e:
-        st.error(f"⚠️ Secrets設定エラー: {str(e)} が見つかりません")
-        return None
-    except Exception as e:
-        st.error(f"認証URL生成エラー: {str(e)}")
-        return None
-
-def handle_oauth_callback(code):
-    """OAuth認証コールバックを処理"""
-    try:
-        if "google_auth" not in st.secrets:
-            st.error("⚠️ Streamlit Secretsに `google_auth` が設定されていません")
-            return False
-        
-        client_config = {
-            "web": {
-                "client_id": st.secrets["google_auth"]["client_id"],
-                "client_secret": st.secrets["google_auth"]["client_secret"],
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [st.secrets["google_auth"]["redirect_uri"]]
-            }
-        }
-        
-        flow = Flow.from_client_config(
-            client_config,
-            scopes=['https://www.googleapis.com/auth/drive.file'],
-            redirect_uri=st.secrets["google_auth"]["redirect_uri"]
-        )
-        
-        # トークンを取得
-        flow.fetch_token(code=code)
-        
-        st.session_state.google_credentials = flow.credentials
-        st.session_state.drive_service = build('drive', 'v3', credentials=flow.credentials)
-        return True
-    except Exception as e:
-        st.error(f"認証エラー: {str(e)}")
-        st.info("💡 ヒント: Google Cloud Consoleで以下を確認してください:\n- OAuth同意画面でテストユーザーが追加されているか\n- Google Drive APIが有効化されているか\n- リダイレクトURIが正しく設定されているか")
-        return False
-
-def upload_to_drive(image_data, filename, mime_type='image/png'):
-    """Googleドライブに画像をアップロード"""
-    try:
-        if st.session_state.drive_service is None:
-            return False, "Googleドライブに接続されていません"
-        
-        file_metadata = {
-            'name': filename,
-            'mimeType': mime_type
-        }
-        
-        media = MediaIoBaseUpload(
-            io.BytesIO(image_data),
-            mimetype=mime_type,
-            resumable=True
-        )
-        
-        file = st.session_state.drive_service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id, name, webViewLink'
-        ).execute()
-        
-        return True, file.get('webViewLink', '')
-    except Exception as e:
-        return False, f"アップロードエラー: {str(e)}"
 
 # カスタムCSS - プロフェッショナルでモダンなデザイン
 st.markdown("""
@@ -246,15 +129,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# OAuth認証のコールバック処理
-query_params = st.query_params
-if 'code' in query_params and st.session_state.google_credentials is None:
-    code = query_params['code']
-    if handle_oauth_callback(code):
-        st.success("✅ Googleドライブに接続しました！")
-        st.query_params.clear()
-        st.rerun()
-
 # 2カラムレイアウト
 col_left, col_right = st.columns([1, 1], gap="large")
 
@@ -282,26 +156,6 @@ with col_left:
         - サーバーには一切送信されません
         - セッション終了時に自動削除されます
         """)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Googleドライブ接続カード
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown("### ☁️ Googleドライブ連携")
-    
-    if st.session_state.google_credentials is None:
-        st.markdown('<div class="info-box">画像をGoogleドライブに保存できます</div>', unsafe_allow_html=True)
-        auth_url = get_google_auth_url()
-        if auth_url:
-            st.markdown(f'<a href="{auth_url}" target="_self"><button style="background: #4285f4; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">🔗 Googleドライブに接続</button></a>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="success-box">✅ Googleドライブ接続済み</div>', unsafe_allow_html=True)
-        if st.button("🔓 接続を解除", use_container_width=True):
-            st.session_state.google_credentials = None
-            st.session_state.drive_service = None
-            st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -458,34 +312,14 @@ with col_right:
                                         use_container_width=True
                                     )
                                     
-                                    # ダウンロードボタンとGoogleドライブ保存ボタン
-                                    btn_col1, btn_col2 = st.columns(2)
-                                    
-                                    with btn_col1:
-                                        st.download_button(
-                                            label="📥 画像をダウンロード",
-                                            data=image_data,
-                                            file_name=f"enjoy_banana_{int(time.time())}.png",
-                                            mime=mime_type,
-                                            use_container_width=True
-                                        )
-                                    
-                                    with btn_col2:
-                                        if st.session_state.google_credentials is not None:
-                                            if st.button("☁️ Googleドライブに保存", use_container_width=True, key="save_to_drive_main"):
-                                                success, message = upload_to_drive(
-                                                    image_data,
-                                                    f"enjoy_banana_{int(time.time())}.png",
-                                                    mime_type
-                                                )
-                                                if success:
-                                                    st.success(f"✅ ドライブに保存しました！")
-                                                    if message:
-                                                        st.info(f"🔗 [ドライブで開く]({message})")
-                                                else:
-                                                    st.error(message)
-                                        else:
-                                            st.button("☁️ Googleドライブに保存", use_container_width=True, disabled=True, help="Googleドライブに接続してください")
+                                    # ダウンロードボタン
+                                    st.download_button(
+                                        label="📥 画像をダウンロード",
+                                        data=image_data,
+                                        file_name=f"enjoy_banana_{int(time.time())}.png",
+                                        mime=mime_type,
+                                        use_container_width=True
+                                    )
                                     
                                     # 履歴に保存
                                     st.session_state.image_history.append({
@@ -578,33 +412,15 @@ if len(st.session_state.image_history) > 0:
                     timestamp_str = datetime.fromtimestamp(item['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
                     st.caption(f"🕐 {timestamp_str}")
                     
-                    # ダウンロードとGoogleドライブ保存ボタン
-                    gallery_btn_col1, gallery_btn_col2 = st.columns(2)
-                    
-                    with gallery_btn_col1:
-                        st.download_button(
-                            label="📥",
-                            data=item['image_data'],
-                            file_name=f"generated_image_{len(history_reversed) - idx}.png",
-                            mime=item['mime_type'],
-                            use_container_width=True,
-                            key=f"download_{item['timestamp']}_{idx}"
-                        )
-                    
-                    with gallery_btn_col2:
-                        if st.session_state.google_credentials is not None:
-                            if st.button("☁️", use_container_width=True, key=f"drive_{item['timestamp']}_{idx}"):
-                                success, message = upload_to_drive(
-                                    item['image_data'],
-                                    f"generated_image_{len(history_reversed) - idx}.png",
-                                    item['mime_type']
-                                )
-                                if success:
-                                    st.success("✅ 保存完了")
-                                else:
-                                    st.error("保存失敗")
-                        else:
-                            st.button("☁️", use_container_width=True, disabled=True, key=f"drive_disabled_{item['timestamp']}_{idx}")
+                    # ダウンロードボタン
+                    st.download_button(
+                        label="📥 ダウンロード",
+                        data=item['image_data'],
+                        file_name=f"generated_image_{len(history_reversed) - idx}.png",
+                        mime=item['mime_type'],
+                        use_container_width=True,
+                        key=f"download_{item['timestamp']}_{idx}"
+                    )
                     
                     st.markdown('</div>', unsafe_allow_html=True)
 
