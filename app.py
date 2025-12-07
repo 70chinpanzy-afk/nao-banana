@@ -8,7 +8,7 @@ import base64
 
 # ページ設定
 st.set_page_config(
-    page_title="Nano Banana Pro - 画像生成",
+    page_title="Enjoy Banana - 画像生成",
     page_icon="🍌",
     layout="wide"
 )
@@ -70,8 +70,8 @@ with st.sidebar:
     st.divider()
     
     # モデル情報
-    st.subheader("📊 モデル情報")
-    st.info("**Nano Banana Pro**\n\nGemini 3 Pro Image - 最新プレビュー版")
+    st.subheader("📊 使用モデル")
+    st.info("**Gemini 3 Pro Image**\n\n最新のAI画像生成モデルで、誰でも手軽に高品質な画像を作成できます！")
     
     st.divider()
     
@@ -89,8 +89,8 @@ with st.sidebar:
         """)
 
 # メイン画面
-st.title("🍌 Nano Banana Pro")
-st.subheader("AI画像生成アプリ")
+st.title("🍌 Enjoy Banana")
+st.subheader("誰でも簡単にAI画像生成を楽しめるツール")
 
 # APIキーチェック
 if not api_key:
@@ -184,7 +184,7 @@ if generate_button:
                             st.download_button(
                                 label="📥 画像をダウンロード",
                                 data=image_data,
-                                file_name=f"nano_banana_{int(time.time())}.png",
+                                file_name=f"enjoy_banana_{int(time.time())}.png",
                                 mime=mime_type,
                                 use_container_width=True
                             )
