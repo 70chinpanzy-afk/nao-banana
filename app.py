@@ -8,7 +8,7 @@ import time
 # ページ設定
 st.set_page_config(
     layout="wide",
-    page_title="Enjoy Banana Ver 2.0",
+    page_title="Enjoy Banana Ver 3.0",
     page_icon="🍌",
     initial_sidebar_state="collapsed"
 )
@@ -124,8 +124,8 @@ st.markdown("""
 # ヘッダー
 st.markdown("""
 <div class="header-container">
-    <div class="header-title">🍌 Enjoy Banana Ver 2.0</div>
-    <div class="header-subtitle">誰でも簡単にAI画像生成を楽しめるプロフェッショナルツール - ギャラリー機能搭載</div>
+    <div class="header-title">🍌 Enjoy Banana Ver 3.0</div>
+    <div class="header-subtitle">誰でも簡単にAI画像生成を楽しめるプロフェッショナルツール - 画風選択機能搭載</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -163,10 +163,17 @@ with col_left:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### ✨ 画像生成")
     
+    # スタイル選択ドロップダウン
+    style = st.selectbox(
+        "🎨 画風を選択（オプション）",
+        ["指定なし", "アニメ風イラスト", "リアルな写真", "3Dレンダリング", "ドット絵", "水彩画風", "サイバーパンク"],
+        help="画風を選択すると、プロンプトに自動的に追加されます"
+    )
+    
     prompt = st.text_area(
         "生成したい画像の説明を入力",
         height=150,
-        placeholder="例: 夕暮れの海辺で遊ぶ子猫、水彩画風、温かい色調",
+        placeholder="例: 夕暮れの海辺で遊ぶ子猫",
         help="詳細に説明するほど、より良い結果が得られます"
     )
     
@@ -258,6 +265,12 @@ with col_right:
                         progress_bar.progress(25)
                         time.sleep(0.5)
                         
+                        # プロンプトの結合処理
+                        if style != "指定なし":
+                            final_prompt = f"{style}で、{prompt}を描写してください。"
+                        else:
+                            final_prompt = prompt
+                        
                         # 画像生成リクエスト
                         status_text.text("🎨 AIが画像を生成中... (30秒ほどかかる場合があります)")
                         progress_bar.progress(50)
@@ -265,7 +278,7 @@ with col_right:
                         # Gemini 3 Pro Image を使用して画像生成
                         response = client.models.generate_content(
                             model='gemini-3-pro-image-preview',
-                            contents=prompt
+                            contents=final_prompt
                         )
                         
                         progress_bar.progress(75)
@@ -367,7 +380,7 @@ if len(st.session_state.image_history) > 0:
     st.markdown("---")
     st.markdown("""
     <div class="card">
-        <h2 style="text-align: center; margin-bottom: 2rem;">📜 History / ギャラリー</h2>
+        <h2 style="text-align: center; margin-bottom: 2rem;">📜 History / ギャラリー (Ver 3.0)</h2>
     </div>
     """, unsafe_allow_html=True)
     
