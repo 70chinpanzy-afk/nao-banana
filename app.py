@@ -8,10 +8,14 @@ import time
 # ページ設定
 st.set_page_config(
     layout="wide",
-    page_title="Enjoy Banana",
+    page_title="Enjoy Banana Ver 2.0",
     page_icon="🍌",
     initial_sidebar_state="collapsed"
 )
+
+# セッション状態の初期化
+if 'image_history' not in st.session_state:
+    st.session_state.image_history = []
 
 # カスタムCSS - プロフェッショナルでモダンなデザイン
 st.markdown("""
@@ -120,8 +124,8 @@ st.markdown("""
 # ヘッダー
 st.markdown("""
 <div class="header-container">
-    <div class="header-title">🍌 Enjoy Banana</div>
-    <div class="header-subtitle">誰でも簡単にAI画像生成を楽しめるプロフェッショナルツール</div>
+    <div class="header-title">🍌 Enjoy Banana Ver 2.0</div>
+    <div class="header-subtitle">誰でも簡単にAI画像生成を楽しめるプロフェッショナルツール - ギャラリー機能搭載</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -304,6 +308,14 @@ with col_right:
                                         use_container_width=True
                                     )
                                     
+                                    # 履歴に保存
+                                    st.session_state.image_history.append({
+                                        'image_data': image_data,
+                                        'mime_type': mime_type,
+                                        'prompt': prompt,
+                                        'timestamp': int(time.time())
+                                    })
+                                    
                                     image_found = True
                                     break
                         
@@ -349,6 +361,55 @@ with col_right:
                         st.info("詳細なエラー情報を確認し、プロンプトを変更するか、しばらく待ってから再度お試しください。")
     
     st.markdown('</div>', unsafe_allow_html=True)
+
+# ギャラリーセクション
+if len(st.session_state.image_history) > 0:
+    st.markdown("---")
+    st.markdown("""
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 2rem;">📜 History / ギャラリー</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 履歴を新しい順に表示（逆順）
+    history_reversed = list(reversed(st.session_state.image_history))
+    
+    # 3列でタイル状に表示
+    for i in range(0, len(history_reversed), 3):
+        cols = st.columns(3)
+        
+        for j in range(3):
+            idx = i + j
+            if idx < len(history_reversed):
+                item = history_reversed[idx]
+                
+                with cols[j]:
+                    st.markdown('<div class="card">', unsafe_allow_html=True)
+                    
+                    # 画像を表示
+                    pil_image = Image.open(io.BytesIO(item['image_data']))
+                    st.image(pil_image, use_container_width=True)
+                    
+                    # プロンプトを表示（短縮）
+                    prompt_display = item['prompt'][:50] + "..." if len(item['prompt']) > 50 else item['prompt']
+                    st.caption(f"**プロンプト:** {prompt_display}")
+                    
+                    # タイムスタンプを表示
+                    from datetime import datetime
+                    timestamp_str = datetime.fromtimestamp(item['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+                    st.caption(f"🕐 {timestamp_str}")
+                    
+                    # ダウンロードボタン
+                    st.download_button(
+                        label="📥 ダウンロード",
+                        data=item['image_data'],
+                        file_name=f"generated_image_{len(history_reversed) - idx}.png",
+                        mime=item['mime_type'],
+                        use_container_width=True,
+                        key=f"download_{item['timestamp']}_{idx}"
+                    )
+                    
+                    st.markdown('</div>', unsafe_allow_html=True)
 
 # フッター
 st.markdown("""
