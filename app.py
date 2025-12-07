@@ -4,10 +4,14 @@ from google.genai import types
 from PIL import Image
 import io
 import time
+import os
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import base64
+
+# ローカル開発用の設定（HTTPを許可）
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # ページ設定
 st.set_page_config(
@@ -24,26 +28,47 @@ if 'google_credentials' not in st.session_state:
     st.session_state.google_credentials = None
 if 'drive_service' not in st.session_state:
     st.session_state.drive_service = None
+if 'oauth_state' not in st.session_state:
+    st.session_state.oauth_state = None
 
 # Google Drive関連の関数
 def get_google_auth_url():
     """Google OAuth認証URLを生成"""
     try:
+        # Secrets設定を確認
+        if "google_auth" not in st.secrets:
+            st.error("⚠️ Streamlit Secretsに `google_auth` が設定されていません")
+            return None
+        
+        client_config = {
+            "web": {
+                "client_id": st.secrets["google_auth"]["client_id"],
+                "client_secret": st.secrets["google_auth"]["client_secret"],
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [st.secrets["google_auth"]["redirect_uri"]]
+            }
+        }
+        
         flow = Flow.from_client_config(
-            {
-                "web": {
-                    "client_id": st.secrets["google_auth"]["client_id"],
-                    "client_secret": st.secrets["google_auth"]["client_secret"],
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [st.secrets["google_auth"]["redirect_uri"]]
-                }
-            },
-            scopes=['https://www.googleapis.com/auth/drive.file']
+            client_config,
+            scopes=['https://www.googleapis.com/auth/drive.file'],
+            redirect_uri=st.secrets["google_auth"]["redirect_uri"]
         )
-        flow.redirect_uri = st.secrets["google_auth"]["redirect_uri"]
-        auth_url, _ = flow.authorization_url(prompt='consent')
+        
+        auth_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent'
+        )
+        
+        # stateをセッションに保存
+        st.session_state.oauth_state = state
+        
         return auth_url
+    except KeyError as e:
+        st.error(f"⚠️ Secrets設定エラー: {str(e)} が見つかりません")
+        return None
     except Exception as e:
         st.error(f"認証URL生成エラー: {str(e)}")
         return None
@@ -51,19 +76,27 @@ def get_google_auth_url():
 def handle_oauth_callback(code):
     """OAuth認証コールバックを処理"""
     try:
+        if "google_auth" not in st.secrets:
+            st.error("⚠️ Streamlit Secretsに `google_auth` が設定されていません")
+            return False
+        
+        client_config = {
+            "web": {
+                "client_id": st.secrets["google_auth"]["client_id"],
+                "client_secret": st.secrets["google_auth"]["client_secret"],
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [st.secrets["google_auth"]["redirect_uri"]]
+            }
+        }
+        
         flow = Flow.from_client_config(
-            {
-                "web": {
-                    "client_id": st.secrets["google_auth"]["client_id"],
-                    "client_secret": st.secrets["google_auth"]["client_secret"],
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [st.secrets["google_auth"]["redirect_uri"]]
-                }
-            },
-            scopes=['https://www.googleapis.com/auth/drive.file']
+            client_config,
+            scopes=['https://www.googleapis.com/auth/drive.file'],
+            redirect_uri=st.secrets["google_auth"]["redirect_uri"]
         )
-        flow.redirect_uri = st.secrets["google_auth"]["redirect_uri"]
+        
+        # トークンを取得
         flow.fetch_token(code=code)
         
         st.session_state.google_credentials = flow.credentials
@@ -71,6 +104,7 @@ def handle_oauth_callback(code):
         return True
     except Exception as e:
         st.error(f"認証エラー: {str(e)}")
+        st.info("💡 ヒント: Google Cloud Consoleで以下を確認してください:\n- OAuth同意画面でテストユーザーが追加されているか\n- Google Drive APIが有効化されているか\n- リダイレクトURIが正しく設定されているか")
         return False
 
 def upload_to_drive(image_data, filename, mime_type='image/png'):
