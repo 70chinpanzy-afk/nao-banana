@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Nothing yet.
+
+## 3.1.0 - 2026-06-04
+
 - Expanded README with clearer project purpose, setup steps, security notes, and maintainer workflow.
 - Added MIT LICENSE file.
 - Added CONTRIBUTING, SECURITY, ROADMAP, and issue templates.
