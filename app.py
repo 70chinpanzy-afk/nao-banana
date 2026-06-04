@@ -98,6 +98,7 @@ st.markdown("""
     .info-box {
         background: #e7f3ff;
         border-left: 4px solid #2196F3;
+        color: #12324a;
         padding: 1rem;
         border-radius: 8px;
         margin: 1rem 0;
@@ -106,6 +107,7 @@ st.markdown("""
     .success-box {
         background: #d4edda;
         border-left: 4px solid #28a745;
+        color: #10351d;
         padding: 1rem;
         border-radius: 8px;
         margin: 1rem 0;
@@ -114,6 +116,7 @@ st.markdown("""
     .warning-box {
         background: #fff3cd;
         border-left: 4px solid #ffc107;
+        color: #4a3800;
         padding: 1rem;
         border-radius: 8px;
         margin: 1rem 0;
@@ -135,7 +138,6 @@ col_left, col_right = st.columns([1, 1], gap="large")
 # 左カラム: 設定・プロンプト入力エリア
 with col_left:
     # APIキー入力カード
-    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### 🔑 API設定")
     
     api_key = st.text_input(
@@ -152,15 +154,13 @@ with col_left:
     
     with st.expander("🔒 プライバシーについて"):
         st.markdown("""
-        - APIキーはブラウザにのみ保存されます
-        - サーバーには一切送信されません
-        - セッション終了時に自動削除されます
+        - APIキーはこのアプリによってファイル保存されません
+        - Streamlitの実行プロセスからGoogle Gemini APIの呼び出しに使用されます
+        - 共有サーバーで公開する場合は、事前に認証と秘密情報の扱いを確認してください
         """)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.divider()
     
     # プロンプト入力カード
-    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### ✨ 画像生成")
     
     # スタイル選択ドロップダウン
@@ -203,11 +203,9 @@ with col_left:
         use_container_width=True,
         disabled=not api_key or not prompt
     )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.divider()
     
     # モデル情報
-    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### 📊 使用モデル")
     st.info("**Gemini 3 Pro Image**\n\n最新のAI画像生成モデルで、誰でも手軽に高品質な画像を作成できます！")
     
@@ -225,13 +223,9 @@ with col_left:
         - 色調や雰囲気を具体的に記述
         - 英語でも日本語でもOK
         """)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # 右カラム: 生成結果のプレビューエリア
 with col_right:
-    st.markdown('<div class="preview-area">', unsafe_allow_html=True)
-    
     # プレースホルダー
     preview_container = st.container()
     
@@ -372,8 +366,6 @@ with col_right:
                         """, unsafe_allow_html=True)
                     else:
                         st.info("詳細なエラー情報を確認し、プロンプトを変更するか、しばらく待ってから再度お試しください。")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # ギャラリーセクション
 if len(st.session_state.image_history) > 0:
@@ -397,8 +389,6 @@ if len(st.session_state.image_history) > 0:
                 item = history_reversed[idx]
                 
                 with cols[j]:
-                    st.markdown('<div class="card">', unsafe_allow_html=True)
-                    
                     # 画像を表示
                     pil_image = Image.open(io.BytesIO(item['image_data']))
                     st.image(pil_image, use_container_width=True)
@@ -421,8 +411,6 @@ if len(st.session_state.image_history) > 0:
                         use_container_width=True,
                         key=f"download_{item['timestamp']}_{idx}"
                     )
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
 
 # フッター
 st.markdown("""

@@ -1,75 +1,149 @@
-# 🍌 Nano Banana Pro - AI画像生成アプリ
+# Nano Banana Pro
 
-Google Generative AI (Gemini) を使用した画像生成Webアプリケーションです。
+Nano Banana Pro is a Streamlit app for running Google Gemini image generation from a local, friendly web UI.
 
-## 機能
+The project is designed for creators, educators, and small teams who want a simple open-source starting point for prompt-based image generation without building a full web application stack.
 
-- 🎨 テキストプロンプトから画像を生成
-- 🔒 セキュアなAPIキー管理（ブラウザローカルのみ）
-- 📥 生成画像のダウンロード機能
-- 💡 プロンプト例の提供
-- ⚠️ 詳細なエラーハンドリング
+## Why This Project Exists
 
-## セットアップ
+Image generation tools are useful, but many examples are either too minimal for real use or too tied to hosted services. Nano Banana Pro keeps the workflow local-first:
 
-### 1. 依存関係のインストール
+- bring your own Google AI Studio API key
+- generate images from Japanese or English prompts
+- choose a visual style before generation
+- download generated images
+- keep a session history while the app is running
+- inspect and modify the full source code
+
+The project is still early, but it is maintained as a public OSS application rather than a private demo. The near-term goal is to make it a dependable, easy-to-run reference app for local AI image generation.
+
+## Features
+
+- Text-to-image generation with Google Gemini
+- Optional style presets such as anime, watercolor, 3D rendering, pixel art, and cyberpunk
+- Password-style API key input
+- Generated image preview
+- Download button for generated images
+- In-session image history gallery
+- Japanese-first UI copy with English prompt support
+- Error handling for authentication, quota, and safety-filter failures
+
+## Screenshots
+
+Screenshots and demo assets are planned for the next release. See [ROADMAP.md](ROADMAP.md).
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/70chinpanzy-afk/nao-banana.git
+cd nao-banana
+```
+
+### 2. Create a Virtual Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Google API キーの取得
+### 4. Get a Google API Key
 
-1. [Google AI Studio](https://aistudio.google.com/app/apikey) にアクセス
-2. 「Create API Key」をクリック
-3. APIキーをコピー
+1. Open [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Create an API key.
+3. Copy the key.
 
-### 3. アプリの起動
+### 5. Run the App
 
 ```bash
 streamlit run app.py
 ```
 
-ブラウザが自動的に開き、アプリが表示されます。
+## Usage
 
-## 使い方
+1. Enter your Google API key in the sidebar or API settings area.
+2. Write a detailed prompt.
+3. Optionally choose a visual style.
+4. Click the generation button.
+5. Download the generated image if needed.
 
-1. サイドバーにGoogle API キーを入力
-2. メイン画面のテキストエリアに生成したい画像の説明を入力
-3. 「画像を生成する」ボタンをクリック
-4. 生成された画像が表示されます
-5. 必要に応じて画像をダウンロード
+## Prompt Tips
 
-## プロンプトのコツ
+- Include subject, style, color, lighting, mood, and composition.
+- Be concrete: "a watercolor illustration of a small cafe at night" works better than "nice cafe".
+- Japanese and English prompts can both work.
+- If a prompt is blocked by a safety filter, rewrite it with safer, more specific language.
 
-- **詳細に記述**: 色、スタイル、雰囲気などを具体的に
-- **スタイル指定**: 「水彩画風」「油絵風」「リアル」など
-- **構図の説明**: 「中央に」「遠景に」など位置関係を明確に
+## Privacy and Security
 
-## 技術スタック
+Nano Banana Pro is intended to run locally.
 
-- **Streamlit**: Webアプリケーションフレームワーク
-- **Google Generative AI**: 画像生成AI
-- **Pillow**: 画像処理ライブラリ
+- API keys are entered through Streamlit's password input.
+- API keys are not written to files by this app.
+- The app uses the key in the running Streamlit process to call Google Gemini.
+- Do not deploy a public shared instance where users enter private API keys unless you have reviewed the hosting and secrets model.
+- Never commit `.env`, `secrets.toml`, or other credential files.
 
-## セキュリティ
+For vulnerability reports, see [SECURITY.md](SECURITY.md).
 
-- APIキーはブラウザのセッションストレージにのみ保存されます
-- サーバーには一切送信されません
-- セッション終了時に自動的に削除されます
+## Project Status
 
-## トラブルシューティング
+This is an early-stage open-source project. Current maintenance priorities are:
 
-### APIキーエラー
-- APIキーが正しく入力されているか確認
-- Google Cloud ConsoleでGenerative AI APIが有効になっているか確認
+- accurate setup documentation
+- safer API key handling guidance
+- reproducible local development
+- issue templates for bug reports and feature requests
+- release notes for visible project history
+- tests and CI for future refactors
 
-### クォータエラー
-- APIの使用制限に達した場合は、しばらく待ってから再試行
+See [ROADMAP.md](ROADMAP.md) for planned work.
 
-### 安全性フィルター
-- プロンプトが不適切と判断された場合は、別の表現で試してください
+## Contributing
 
-## ライセンス
+Contributions are welcome. Good first contributions include:
 
-MIT License
+- improving setup instructions
+- adding screenshots
+- testing the app on different Python versions
+- improving error messages
+- adding model configuration options
+- reporting bugs with clear reproduction steps
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request.
+
+## Maintainer
+
+This repository is maintained by [@70chinpanzy-afk](https://github.com/70chinpanzy-afk).
+
+Maintainer responsibilities include reviewing issues, triaging bugs, improving documentation, managing releases, and keeping dependency/security guidance current.
+
+## Codex for Open Source
+
+This repository is being prepared for open-source maintainer workflows. Planned Codex use cases include:
+
+- reviewing pull requests for Streamlit and Python issues
+- triaging bug reports and reproductions
+- improving setup and troubleshooting documentation
+- generating release checklist drafts
+- scanning for risky credential-handling changes
+
+See [docs/CODEX_FOR_OSS_APPLICATION.md](docs/CODEX_FOR_OSS_APPLICATION.md) for a short application draft.
+
+## Tech Stack
+
+- Python
+- Streamlit
+- Google GenAI SDK
+- Pillow
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
